@@ -10,8 +10,9 @@ RUN npm install && npm run build
 FROM webdevops/php-nginx:8.2-alpine
 
 # Install Laravel framework system requirements (https://laravel.com/docs/10.x/deployment)
-# RUN apk add oniguruma-dev postgresql-dev libxml2-dev
-# All of this already pre installed. Validated by running docker run --rm webdevops/php-nginx:8.2-alpine php -m
+RUN apk add oniguruma-dev postgresql-dev libxml2-dev
+# All of this already pre installed.
+# Validated by running `docker run --rm webdevops/php-nginx:8.2-alpine php -m`
 # RUN docker-php-ext-install \
         # ctype \
         # dom \
@@ -39,7 +40,7 @@ ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
 WORKDIR /app
 COPY --from=node /app .
-COPY scripts/ /entrypoint.d/
+COPY entrypoint.d/ /entrypoint.d/
 
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
