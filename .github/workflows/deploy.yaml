@@ -1,0 +1,10 @@
+on:
+  workflow_dispatch:
+jobs:
+  deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Call Render Deployment Hook URL"
+        env:
+          URL: ${{ secrets.RENDER_DEPLOY_HOOK }}
+        run: curl "$URL?ref=${{ github.sha }}"
