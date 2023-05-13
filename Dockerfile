@@ -1,26 +1,46 @@
 FROM node:18-alpine as node
-FROM richarvey/nginx-php-fpm:3.1.4
 
-# Copy the node binary
-COPY --from=node /opt /opt
-COPY --from=node /usr/local /usr/local
-
+# Build FE first
+WORKDIR /app
 COPY . .
+# Building assets
+RUN npm install && npm run build
 
-# Image config
-ENV SKIP_COMPOSER 1
-ENV WEBROOT /var/www/html/public
-ENV PHP_ERRORS_STDERR 1
-ENV RUN_SCRIPTS 1
-ENV REAL_IP_HEADER 1
+# Build BE
+FROM webdevops/php-nginx:8.2-alpine
 
-# Laravel config
+# Install Laravel framework system requirements (https://laravel.com/docs/10.x/deployment)
+# RUN apk add oniguruma-dev postgresql-dev libxml2-dev
+# All of this already pre installed. Validated by running docker run --rm webdevops/php-nginx:8.2-alpine php -m
+# RUN docker-php-ext-install \
+        # ctype \
+        # dom \
+        # fileinfo \
+        # filter \
+        # hash \
+        # mbstring \
+        # openssl \
+        # pcre \
+        # pdo \
+        # session \
+        # tokenizer \
+        # json \
+        # mbstring \
+        # pdo_mysql \
+        # pdo_pgsql \
+        # xml
+
+# Copy Composer binary from the Composer official Docker image
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+ENV WEB_DOCUMENT_ROOT /app/public
 ENV APP_ENV production
 ENV APP_DEBUG false
 ENV LOG_CHANNEL stderr
+WORKDIR /app
+COPY --from=node /app .
+COPY scripts/ /entrypoint.d/
 
-# Running composer
-RUN composer install --no-dev
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Building assets
-RUN npm install && npm run build
+RUN chown -R application:application .
